@@ -1,4 +1,19 @@
 # Calorie-Tracker
+pip install streamlit
+import streamlit as st
+
+st.title("Calorie Tracker")
+
+food_name = st.text_input("Enter food name:")
+
+if st.button("Search"):
+    results = search_food(food_name)
+    if not results:
+        st.write("No results found")
+    else:
+        calories = get_calories(results[0])
+        st.write(f"{results[0]['description']}: {calories} kcal")
+
 import os
 import requests
 from dotenv import load_dotenv
