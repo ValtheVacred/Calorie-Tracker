@@ -35,7 +35,6 @@ portion_type = st.selectbox(
     ["Plate", "Bowl", "Glass", "Piece / Slice"]
 )
 
-# Portion logic
 fraction_map = {
     "1/4": 0.25,
     "1/2": 0.5,
@@ -43,10 +42,10 @@ fraction_map = {
     "Full": 1.0
 }
 
-# How many USDA servings a FULL container represents
-container_servings = {
-    "Plate": 2.0,
-    "Bowl": 1.5,
+# USDA serving equivalents
+portion_servings = {
+    "Plate": 2.5,
+    "Bowl": 1.75,
     "Glass": 1.0
 }
 
@@ -66,10 +65,31 @@ else:
 
 
 
+
 if st.button("Search"):
     results = search_food(food_name)
+
     if not results:
         st.write("No results found")
     else:
-        calories = get_calories(results[0])
-        st.write(f"{results[0]['description']}: {calories} kcal")
+        base_calories = get_calories(results[0])
+
+        if base_calories is None:
+            st.write("Calorie data not available")
+        else:
+            if portion_type == "Piece / Slice":
+                total_calories = base_calories * pieces
+                st.write(
+                    f"{results[0]['description']}: "
+                    f"{total_calories:.0f} kcal "
+                    f"({pieces} piece(s))"
+                )
+            else:
+                servings = portion_servings[portion_type] * fraction
+                total_calories = base_calories * servings
+                st.write(
+                    f"{results[0]['description']}: "
+                    f"{total_calories:.0f} kcal "
+                    f"({fraction_label} {portion_type.lower()})"
+                )
+
