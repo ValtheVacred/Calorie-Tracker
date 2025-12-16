@@ -70,38 +70,60 @@ def render_circle(fill_level, label):
     st.markdown(svg, unsafe_allow_html=True)
 
 def render_glass(fill_level):
-    # Use a clipPath so the rectangular red fill is clipped to the cup/trapezium shape.
-    # The cup inner area runs approx from y=10 (top) to y=140 (bottom): height 130px.
+    # Draw the cup (trapezium) and compute a trapezoid polygon for the filled area
+    # instead of using clipPath; this avoids clip-path rendering issues in some contexts.
     fraction = fill_to_fraction.get(fill_level, 0)
-    max_inner_top = 10
-    max_inner_bottom = 140
+
+    # cup corners
+    top_left = (30.0, 10.0)
+    top_right = (90.0, 10.0)
+    bottom_right = (75.0, 140.0)
+    bottom_left = (45.0, 140.0)
+
+    max_inner_top = top_left[1]
+    max_inner_bottom = bottom_left[1]
     max_fill_height = max_inner_bottom - max_inner_top  # 130
+
     fill_px = fraction * max_fill_height
+    fill_px = max(0.0, min(fill_px, max_fill_height))
+    y_fill_top = max_inner_bottom - fill_px
 
-    # Ensure fill_px is non-negative and not > max
-    fill_px = max(0, min(fill_px, max_fill_height))
-    rect_y = max_inner_bottom - fill_px
+    # If fraction is 0, skip drawing the red fill polygon; cup background should still show.
+    fill_polygon_svg = ""
+    if fraction > 0:
+        # Compute intersection points on the left and right edges where the horizontal fill line at y_fill_top meets them.
+        # left edge runs from top_left -> bottom_left
+        left_t = 0.0
+        left_dy = bottom_left[1] - top_left[1]
+        if left_dy != 0:
+            left_t = (y_fill_top - top_left[1]) / left_dy
+        x_left = top_left[0] + left_t * (bottom_left[0] - top_left[0])
 
-    # If fill_px is 0, we simply skip drawing the red rect.
-    rect_svg = ""
-    if fill_px > 0:
-        # rect x spans the trapezium bounding box: x=30..90 width=60
-        rect_svg = f'<rect x="30" y="{rect_y}" width="60" height="{fill_px}" fill="#ef4444" clip-path="url(#cupClip)"/>'
+        # right edge runs from top_right -> bottom_right
+        right_t = 0.0
+        right_dy = bottom_right[1] - top_right[1]
+        if right_dy != 0:
+            right_t = (y_fill_top - top_right[1]) / right_dy
+        x_right = top_right[0] + right_t * (bottom_right[0] - top_right[0])
+
+        # If fully filled, draw the full cup area (top->top->bottom->bottom)
+        if fraction >= 1.0:
+            filled_points = f"{top_left[0]},{top_left[1]} {top_right[0]},{top_right[1]} {bottom_right[0]},{bottom_right[1]} {bottom_left[0]},{bottom_left[1]}"
+        else:
+            # polygon from the horizontal fill top line down to bottom corners
+            filled_points = f"{x_left:.3f},{y_fill_top:.3f} {x_right:.3f},{y_fill_top:.3f} {bottom_right[0]},{bottom_right[1]} {bottom_left[0]},{bottom_left[1]}"
+
+        fill_polygon_svg = f'<polygon points="{filled_points}" fill="#ef4444" />'
 
     svg = f"""
     <svg width="120" height="160" viewBox="0 0 120 160" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-            <clipPath id="cupClip">
-                <polygon points="30,10 90,10 75,140 45,140"/>
-            </clipPath>
-        </defs>
-
         <!-- cup background -->
-        <polygon points="30,10 90,10 75,140 45,140"
+        <polygon points="{top_left[0]},{top_left[1]} {top_right[0]},{top_right[1]} {bottom_right[0]},{bottom_right[1]} {bottom_left[0]},{bottom_left[1]}"
             fill="#e5e7eb" stroke="#9ca3af" stroke-width="2"/>
-        {rect_svg}
+        {fill_polygon_svg}
         <!-- thin outline -->
-        <polygon points="30,10 90,10 75,140 45,140" fill="none" stroke="#9ca3af" stroke-width="2"/>
+        <polygon points="{top_left[0]},{top_left[1]} {top_right[0]},{top_right[1]} {bottom_right[0]},{bottom_right[1]} {bottom_left[0]},{bottom_left[1]}"
+            fill="none" stroke="#9ca3af" stroke-width="2"/>
     </svg>
     <div style="text-align:center;font-weight:600">Glass</div>
     """
