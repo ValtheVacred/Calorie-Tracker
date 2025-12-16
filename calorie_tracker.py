@@ -27,6 +27,45 @@ st.title("Calorie Tracker")
 
 food_name = st.text_input("Enter food name:")
 
+
+
+
+portion_type = st.selectbox(
+    "Select portion type:",
+    ["Plate", "Bowl", "Glass", "Piece / Slice"]
+)
+
+# Portion logic
+fraction_map = {
+    "1/4": 0.25,
+    "1/2": 0.5,
+    "3/4": 0.75,
+    "Full": 1.0
+}
+
+# How many USDA servings a FULL container represents
+container_servings = {
+    "Plate": 2.0,
+    "Bowl": 1.5,
+    "Glass": 1.0
+}
+
+if portion_type == "Piece / Slice":
+    pieces = st.number_input(
+        "Number of pieces / slices:",
+        min_value=1,
+        step=1
+    )
+else:
+    fraction_label = st.selectbox(
+        "Select portion size:",
+        ["1/4", "1/2", "3/4", "Full"]
+    )
+    fraction = fraction_map[fraction_label]
+
+
+
+
 if st.button("Search"):
     results = search_food(food_name)
     if not results:
