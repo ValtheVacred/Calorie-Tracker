@@ -32,6 +32,10 @@ def _polar(cx, cy, r, angle_deg):
     return cx + r * math.cos(rad), cy + r * math.sin(rad)
 
 def render_circle(fill_level, label):
+    # Don't render anything when empty (fill_level == 0) to keep UI clean
+    if fill_level == 0:
+        return
+
     # Render a pie-sector fill: 0, 90, 180, 270, 360 degrees starting at -90 (top).
     fraction = fill_to_fraction.get(fill_level, 0)
     cx, cy = 60, 60
@@ -43,8 +47,6 @@ def render_circle(fill_level, label):
     # When fully filled, draw a full red circle to avoid arc seam issues.
     if fraction >= 1.0:
         sector_svg = f'<circle cx="{cx}" cy="{cy}" r="{r}" fill="#ef4444"/>'
-    elif fraction <= 0.0:
-        sector_svg = ""  # nothing red
     else:
         # compute start and end points on circumference
         x1, y1 = _polar(cx, cy, r, start_angle)
@@ -70,6 +72,10 @@ def render_circle(fill_level, label):
     st.markdown(svg, unsafe_allow_html=True)
 
 def render_glass(fill_level):
+    # Don't render anything when empty (fill_level == 0) to keep UI clean
+    if fill_level == 0:
+        return
+
     # Draw the cup (trapezium) and compute a trapezoid polygon for the filled area
     # instead of using clipPath; this avoids clip-path rendering issues in some contexts.
     fraction = fill_to_fraction.get(fill_level, 0)
